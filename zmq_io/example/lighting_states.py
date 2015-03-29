@@ -44,3 +44,8 @@ def error(change_event):
                change_event.wait(0.2)
     print "error stop"
 
+
+def off(change_event):
+    print "off start"
+    led.fillOff()
+    print "off stop"
