@@ -48,4 +48,5 @@ def error(change_event):
 def off(change_event):
     print "off start"
     led.fillOff()
+    led.update()
     print "off stop"

@@ -5,6 +5,15 @@ This is a collection of runnable Python modules which communicate using ZeroMQ (
 
 The modules are prefixed with in/out/io to identify whether they are an input/output/both type of module.
 
+Usage
+-----
+
+Clone the git repository (pip install coming soon) and run one of the modules directly:
+
+    git clone https://github.com/flyte/zmq-io-modules.git
+    cd zmq-io-modules
+    python zmq_io/io_stdin.py
+
 The Modules
 -----------
 
