@@ -17,9 +17,10 @@ def rainbow(change_event):
 
 def white(change_event):
     print "white started"
-    led.fillRGB(255,255,255)
-    led.update()
-    change_event.wait(2)
+    ani = animation.ColorFade(led, Color(255, 255, 255))
+    while not change_event.isSet():
+        ani.step()
+        led.update()
     print "white stopping"
 
 
@@ -47,6 +48,8 @@ def error(change_event):
 
 def off(change_event):
     print "off start"
-    led.fillOff()
-    led.update()
+    ani = animation.ColorFade(led, Color(0, 0, 0))
+    while not change_event.isSet():
+        ani.step()
+        led.update()
     print "off stop"
