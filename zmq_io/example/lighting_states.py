@@ -2,8 +2,27 @@ from time import sleep
 from raspledstrip.ledstrip import *
 from raspledstrip import animation
 
+ZERO_TO_ONE_100 = [x/100.0 for x in range(0, 101)]
+ONE_TO_ZERO_100 = [x/100.0 for x in range(100, -1, -1)]
+
 led = LEDStrip(32, True)
 led.setMasterBrightness(1)
+colour = Color(0, 0, 0)
+
+def _fade_in(col):
+    global colour
+    for i in ZERO_TO_ONE_100:
+        colour = Color(col.r, col.g, col.b, i)
+        led.fill(colour)
+        led.update()
+
+
+def _fade_out():
+    global colour
+    for i in ONE_TO_ZERO_100:
+        colour = Color(colour.r, colour.g, colour.b, i)
+        led.fill(colour)
+        led.update()
 
 
 def rainbow(change_event):
@@ -17,10 +36,7 @@ def rainbow(change_event):
 
 def white(change_event):
     print "white started"
-    ani = animation.ColorFade(led, Color(255, 255, 255))
-    while not change_event.isSet():
-        ani.step()
-        led.update()
+    _fade_in(Color(255, 255, 255))
     print "white stopping"
 
 
@@ -48,8 +64,5 @@ def error(change_event):
 
 def off(change_event):
     print "off start"
-    ani = animation.ColorFade(led, Color(0, 0, 0))
-    while not change_event.isSet():
-        ani.step()
-        led.update()
+    led.all_off()
     print "off stop"
