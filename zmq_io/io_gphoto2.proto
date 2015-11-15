@@ -1,0 +1,8 @@
+package io_gphoto2;
+
+message Photo {
+    required string bytes = 1;
+    required int32 size_x = 2;
+    required int32 size_y = 3;
+    required string type = 4;
+}
