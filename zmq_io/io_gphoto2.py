@@ -1,12 +1,35 @@
+import os
 import io
 import argparse
 import cPickle as pickle
 import subprocess as sp
 
-import zmq
-from PIL import Image
+import zerorpc
 
-from io_gphoto2_pb2 import Photo
+
+class GPhoto2API:
+
+    def take_photo(self):
+        """
+        Take a photo and return a dict containing the image and metadata.
+        """
+        try:
+            sp.call((
+                "%s" % args.gphoto2,
+                "--capture-image-and-download",
+                "--force-overwrite",
+                "--filename=output.jpg"
+            ))
+            with open("output.jpg", "rb") as f:
+                return dict(
+                    bytes=f.read(),
+                    ext="jpg"
+                )
+        finally:
+            try:
+                os.unlink("output.jpg")
+            except OSError:
+                pass
 
 
 def parse_args():
@@ -19,38 +42,8 @@ def parse_args():
     return p.parse_args()
 
 
-def take_photo():
-    """
-    Take a photo and return an instance of `io_gphoto2_pb2.Photo`.
-    """
-    sp.call((
-        "%s" % args.gphoto2,
-        "--capture-image-and-download",
-        "--force-overwrite",
-        "--filename=output.jpg"
-    ))
-    with open("output.jpg") as f:
-        img = Image.open(f)
-        size_x, size_y = img.size
-        return Photo(
-            bytes=f.read(),
-            size_x=size_x,
-            size_y=size_y,
-            mode=img.mode
-        )
-
-
 if __name__ == "__main__":
     args = parse_args()
-
-    context = zmq.Context()
-    socket = context.socket(zmq.REP)
-    socket.bind(args.req_uri)
-
-    while True:
-        msg = socket.recv().strip()
-        if msg == "take_photo":
-            print "Taking photo.."
-            socket.send(str(take_photo().SerializeToString()))
-        else:
-            print "Didn't recognise command: %s" % msg
+    s = zerorpc.Server(GPhoto2API())
+    s.bind(args.req_uri)
+    s.run()
