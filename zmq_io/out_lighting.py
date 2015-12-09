@@ -1,10 +1,57 @@
 import traceback
-import zmq
 import argparse
 import threading
 import Queue as queue
-from time import sleep
 from importlib import import_module
+
+import zerorpc
+
+
+class LightingServer:
+
+    def __init__(self, states, state_queue, change_event, quit_event):
+        self.states = states
+        self.state_queue = state_queue
+        self.change_event = change_event
+        self.quit_event = quit_event
+
+    def _clear_queue(self):
+        try:
+            self.state_queue.get_nowait()
+        except queue.Empty:
+            pass
+
+    def run_states(self, state_names):
+        """
+        Clear the existing queue and run a new list of states.
+        """
+        if not all(hasattr(states, state) for state in state_names):
+            raise ValueError("All states must exist.")
+        self._clear_queue()
+        for state in state_names:
+            self.state_queue.put(getattr(states, state))
+        self.change_event.set()
+
+    def run_state(self, state_name):
+        """
+        Clear the existing queue and run a single state.
+        """
+        self.run_states((state_name,))
+
+    def list_states(self):
+        """
+        Get a list of all valid states.
+        """
+        return filter(lambda x: not x.startswith("_"), dir(self.states))
+
+    def stop_state(self, clear_queue=True):
+        """
+        Stop the currently running state. Clears the queue by default, otherwise will
+        skip to the next state in the queue.
+        """
+        if clear_queue:
+            self._clear_queue()
+        self.change_event.set()
 
 
 def lighting_loop(state_queue, change_event, quit_event):
@@ -21,55 +68,32 @@ def lighting_loop(state_queue, change_event, quit_event):
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
-    p.add_argument("listen_uri", help="ZeroMQ uri for PULL socket to bind to")
+    p.add_argument("uri", help="URI for ZeroRPC server to bind to")
     p.add_argument(
         "states_module",
         help="Python module containing lighting states as functions")
     args = p.parse_args()
 
     states = import_module(args.states_module)
-    context = zmq.Context()
-    receiver = context.socket(zmq.PULL)
-    receiver.bind(args.listen_uri)
-
     change_event = threading.Event()
     quit_event = threading.Event()
     state_queue = queue.Queue()
-    state = None
-    new_state = None
+
+    s = zerorpc.Server(LightingServer(states, state_queue, change_event, quit_event))
+    s.bind(args.uri)
 
     t_lighting = threading.Thread(
         target=lighting_loop, args=(state_queue, change_event, quit_event))
     t_lighting.start()
 
     try:
-        while True:
-            msg = receiver.recv().lower()
-
-            chain = msg.split(",")
-            if not all([hasattr(states, state) for state in chain]):
-                continue
-
-            # Clear queue
-            while True:
-                try:
-                    state_queue.get_nowait()
-                except queue.Empty:
-                    break
-
-            # Create new queue
-            for state in chain:
-                state_queue.put(getattr(states, state))
-
-            # Kick it off
-            change_event.set()
-
+        s.run()
     except KeyboardInterrupt:
         print ""
     finally:
         print "Stopping lighting thread.."
-        change_event.set()
         quit_event.set()
+        change_event.set()
         if t_lighting is not None:
             t_lighting.join()
         print "Bye!"
