@@ -42,10 +42,9 @@ def input_changed(event):
     Handler for input changes. Forms a dictionary containing event information and PUBlishes it
     using the global ZeroMQ PUB socket.
     """
+    input_port = event.chip.input_port.value
     data = {
-        "pin": event.pin_num,
-        "direction": not bool(event.direction),
-        "state": {i: bool(event.interrupt_capture & PINS[i]) for i, _ in enumerate(PINS)}
+        "state": {i: bool(input_port & PINS[i]) for i, _ in enumerate(PINS)}
     }
     socket.send("%s%s" % (args.prefix, json.dumps(data)))
 
