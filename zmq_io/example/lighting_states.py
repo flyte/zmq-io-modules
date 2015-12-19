@@ -9,6 +9,7 @@ led = LEDStrip(32, True)
 led.setMasterBrightness(1)
 colour = Color(0, 0, 0)
 
+
 def _fade_in(col):
     global colour
     for i in ZERO_TO_ONE_100:
@@ -23,6 +24,16 @@ def _fade_out():
         colour = Color(colour.r, colour.g, colour.b, i)
         led.fill(colour)
         led.update()
+
+
+def red_green(change_event):
+    print "red_green started"
+    ani = animation.ColorPattern(led, [Color(255, 0, 0), Color(0, 255, 0)], width=16)
+    while not change_event.isSet():
+        ani.step()
+        led.update()
+        change_event.wait(0.075)
+    print "red_green stopping"
 
 
 def rainbow(change_event):
