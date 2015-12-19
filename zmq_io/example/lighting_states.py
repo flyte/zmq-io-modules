@@ -2,6 +2,7 @@ from time import sleep
 from raspledstrip.ledstrip import *
 from raspledstrip import animation
 
+
 led = LEDStrip(32, True)
 led.setMasterBrightness(1)
 
@@ -17,7 +18,7 @@ def rainbow(change_event):
 
 def white(change_event):
     print "white started"
-    led.fillRGB(255,255,255)
+    led.fillRGB(255, 255, 255)
     led.update()
     change_event.wait(2)
     print "white stopping"
@@ -36,12 +37,12 @@ def scan(change_event):
 def error(change_event):
     print "error start"
     for i in range(0, 5):
-               led.fillRGB(255, 0, 0)
-               led.update()
-               change_event.wait(0.2)
-               led.fillOff()
-               led.update()
-               change_event.wait(0.2)
+        led.fillRGB(255, 0, 0)
+        led.update()
+        change_event.wait(0.2)
+        led.fillOff()
+        led.update()
+        change_event.wait(0.2)
     print "error stop"
 
 
